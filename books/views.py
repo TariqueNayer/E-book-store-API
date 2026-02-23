@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from .models import Book, Order, Order_Status
-from .serializers import AdminBookSerializer, OrderSerializer, PublicBookSerializer
+from .serializers import AdminBookSerializer, PublicBookSerializer, AdminOrderSerializer, PublicOrderSerializer
 
 # Create your views here.
 
@@ -26,12 +26,12 @@ class AdminBookViewSet(viewsets.ModelViewSet):
 # renders admin/orders/
 class AdminOrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
-    serializer_class = OrderSerializer
+    serializer_class = AdminOrderSerializer
     permission_classes = [permissions.IsAdminUser]
 
 # orders/
 class UserOrderViewSet(viewsets.ModelViewSet):
-    serializer_class = OrderSerializer
+    serializer_class = PublicOrderSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
@@ -44,7 +44,6 @@ class UserOrderViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         self.order = serializer.save(
-            user=self.request.user,
             status=Order_Status.PENDING
         )
 

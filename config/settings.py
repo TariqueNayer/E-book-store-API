@@ -52,6 +52,8 @@ INSTALLED_APPS = [
 	#third-party apps.
 	'rest_framework',
 	'rest_framework.authtoken',
+	'drf_spectacular',
+    'drf_spectacular_sidecar',
 
 	#auth
 	'allauth',
@@ -157,7 +159,9 @@ REST_FRAMEWORK = {
 
 	'DEFAULT_PERMISSION_CLASSES': [
 		'rest_framework.permissions.AllowAny',
-	]
+	],
+
+	'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 REST_AUTH = {
 	'USE_JWT': True,
