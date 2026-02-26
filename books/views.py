@@ -4,12 +4,14 @@ import json
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from django.http import FileResponse
 
 from rest_framework.views import APIView
 from rest_framework import generics, permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.exceptions import PermissionDenied, NotFound
 
 from square import Square
 from square.environment import SquareEnvironment
@@ -142,3 +144,18 @@ class SquareWebhookView(APIView):
 
         return Response({"status": "ok"})
 
+class DownloadBookView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, order_id):
+        try:
+            order = Order.objects.get(id=order_id, user=request.user)
+        except order.DoesNotExist:
+            raise NotFound("Order not found")
+
+        if order.status != Order_Status.PAID:
+            raise PermissionDenied("Payment_required")
+
+        file_path = order.book.pdf_file.path
+
+        return FileResponse(open(file_path, "rb"), content_type="application/pdf")

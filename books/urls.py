@@ -13,6 +13,8 @@ router.register(r'admin/orders', views.AdminOrderViewSet, basename='admin-orders
 
 
 urlpatterns = [
-    path("", include(router.urls)),   # ViewSet routes
     path("orders/webhook/", views.SquareWebhookView.as_view()),  # webhook (NOT in router)
+    path("", include(router.urls)),   # ViewSet routes
+    path("orders/<uuid:order_id>/download/", views.DownloadBookView.as_view(), name="download_order") # download odered book
+    
 ]
