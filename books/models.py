@@ -56,6 +56,10 @@ class Order(models.Model):
 
 	price = models.DecimalField(max_digits=6, decimal_places=2)
 
+	square_payment_id = models.CharField(max_length=100, blank=True, null=True)
+
+	square_order_id = models.CharField(max_length=100, blank=True, null=True)
+	
 	status = models.CharField(
 		max_length=2,
 		choices=Order_Status.choices,

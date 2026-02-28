@@ -1,5 +1,8 @@
 import uuid
 import json
+import hmac
+import hashlib
+import base64
 
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
@@ -71,22 +74,6 @@ class UserOrderViewSet(viewsets.ModelViewSet):
 
         return response
 
-    @action(detail=True, methods=["get"])
-    def pay(self, request, pk=None):
-        order = self.get_object()
-
-        if order.status != Order_Status.PENDING:
-            return Response(
-                {"detail": "Order is not pending."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        return Response({
-            "message": "Proceed to payment",
-            "order_id": order.id,
-            "amount": order.price
-        })
-
     @action(detail=True, methods=["post"])
     def pay(self, request, pk=None):
         order = self.get_object()
@@ -114,12 +101,31 @@ class UserOrderViewSet(viewsets.ModelViewSet):
         )
 
         if result.payment_link:
+            order.square_order_id = result.payment_link.order_id
+            order.save()
             return Response({
                 "payment_url": result.payment_link.url
             })
 
         return Response(result.errors, status=400)
 
+def verify_square_signature(request):
+    signature = request.headers.get("x-square-hmacsha256-signature")
+
+    if not signature:
+        return False
+
+    url = request.build_absolute_uri()
+    body = request.body  # raw bytes
+
+    message = url.encode("utf-8") + body
+
+    key = settings.SQUARE_WEBHOOK_SIGNATURE_KEY.encode("utf-8")
+
+    digest = hmac.new(key, message, hashlib.sha256).digest()
+    computed_signature = base64.b64encode(digest).decode("utf-8")
+
+    return hmac.compare_digest(computed_signature, signature)
 
 @method_decorator(csrf_exempt, name="dispatch")
 class SquareWebhookView(APIView):
@@ -127,20 +133,43 @@ class SquareWebhookView(APIView):
     permission_classes = []
 
     def post(self, request):
+        if not verify_square_signature(request):
+            return Response({"error": "Invalid signature"}, status=403)
+
         event = request.data
 
         if event.get("type") == "payment.updated":
             payment = event["data"]["object"]["payment"]
+            
+            if payment.get("status") == "COMPLETED":
 
-            if payment["status"] == "COMPLETED":
-                order_id = payment["metadata"].get("order_id")
+                metadata = payment.get("metadata", {})
+                order_id = metadata.get("order_id")
 
                 try:
-                    order = Order.objects.get(id=order_id)
+                    if order_id:
+                        order = Order.objects.filter(id=order_id).first()
+                    
+                    if not order_id:
+                        square_order_id = payment.get("order_id")
+
+                        if not square_order_id:
+                            return Response({"status": "no square order id"})
+
+                        order = Order.objects.get(square_order_id=square_order_id)
+
+                        
+                    if order.status == Order_Status.PAID:
+                        return Response({"status": "already processed"})
+
                     order.status = Order_Status.PAID
+                    order.square_payment_id = payment.get("id")
                     order.save()
+
+                    print(f"Order {order.id} marked as PAID")
+
                 except Order.DoesNotExist:
-                    pass
+                    print("Order not found for square order:", square_order_id)
 
         return Response({"status": "ok"})
 
