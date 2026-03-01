@@ -16,6 +16,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied, NotFound
 
+from drf_spectacular.utils import extend_schema, OpenApiTypes, OpenApiParameter
+
 from square import Square
 from square.environment import SquareEnvironment
 from square.types.currency import Currency
@@ -74,6 +76,11 @@ class UserOrderViewSet(viewsets.ModelViewSet):
 
         return response
 
+    @extend_schema(
+    parameters=[
+        OpenApiParameter(name="id", type=str, location=OpenApiParameter.PATH)
+    ]
+    )
     @action(detail=True, methods=["post"])
     def pay(self, request, pk=None):
         order = self.get_object()
@@ -127,12 +134,13 @@ def verify_square_signature(request):
 
     return hmac.compare_digest(computed_signature, signature)
 
+@extend_schema(request=None, responses=None)
 @method_decorator(csrf_exempt, name="dispatch")
 class SquareWebhookView(APIView):
     authentication_classes = []
     permission_classes = []
 
-    def post(self, request):
+    async def post(self, request):
         if not verify_square_signature(request):
             return Response({"error": "Invalid signature"}, status=403)
 
@@ -173,6 +181,9 @@ class SquareWebhookView(APIView):
 
         return Response({"status": "ok"})
 
+@extend_schema(
+    responses={200: OpenApiTypes.BINARY}
+)
 class DownloadBookView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 

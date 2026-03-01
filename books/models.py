@@ -67,7 +67,7 @@ class Order(models.Model):
 	)
 
 	@property
-	def book_display_info(self):
+	def book_display_info(self) -> str:
 		if self.book:
 			return f"{self.book.id} | {self.book.title}"
 		else:

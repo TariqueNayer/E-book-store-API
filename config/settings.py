@@ -53,7 +53,7 @@ INSTALLED_APPS = [
 	'rest_framework',
 	'rest_framework.authtoken',
 	'drf_spectacular',
-    'drf_spectacular_sidecar',
+	'drf_spectacular_sidecar',
 
 	#auth
 	'allauth',
@@ -174,9 +174,9 @@ REST_AUTH = {
 # simple jwt.
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
-    "AUTH_HEADER_TYPES": ("Bearer",),
+	"ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+	"REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+	"AUTH_HEADER_TYPES": ("Bearer",),
 }
 
 # for user uploaded media.
@@ -228,3 +228,28 @@ SQUARE_LOCATION_ID = env("SQUARE_LOCATION_ID")
 SQUARE_WEBHOOK_SIGNATURE_KEY = env("SQUARE_WEBHOOK_SIGNATURE_KEY")
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+#cookies
+if not DEBUG:
+	SESSION_COOKIE_SECURE = True
+	CSRF_COOKIE_SECURE = True
+	SESSION_COOKIE_HTTPONLY = True
+	CSRF_COOKIE_HTTPONLY = False  # must be False for DRF browsable API
+	SESSION_COOKIE_SAMESITE = "None"
+	CSRF_COOKIE_SAMESITE = "None"
+
+#HTTPS
+SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=True)
+
+SECURE_HSTS_SECONDS = env.int("SECURE_HSTS_SECONDS", default=2592000)  # 30 days
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool(
+	"SECURE_HSTS_INCLUDE_SUBDOMAINS", default=True
+)
+SECURE_HSTS_PRELOAD = env.bool("SECURE_HSTS_PRELOAD", default=True)
+
+#cache
+CACHES = {
+	"default": {
+		"BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+	}
+}
