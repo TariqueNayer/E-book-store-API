@@ -46,6 +46,7 @@ INSTALLED_APPS = [
 	'django.contrib.contenttypes',
 	'django.contrib.sessions',
 	'django.contrib.messages',
+	"whitenoise.runserver_nostatic",
 	'django.contrib.staticfiles',
 	'django.contrib.sites',
 
@@ -54,6 +55,8 @@ INSTALLED_APPS = [
 	'rest_framework.authtoken',
 	'drf_spectacular',
 	'drf_spectacular_sidecar',
+	'storages',
+
 
 	#auth
 	'allauth',
@@ -68,6 +71,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
 	"allauth.account.middleware.AccountMiddleware", # allauth
 	'django.middleware.security.SecurityMiddleware',
+	"whitenoise.middleware.WhiteNoiseMiddleware",
 	'django.contrib.sessions.middleware.SessionMiddleware',
 	'django.middleware.common.CommonMiddleware',
 	'django.middleware.csrf.CsrfViewMiddleware',
@@ -142,6 +146,17 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [BASE_DIR / 'static']
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+STORAGES = {
+	"default": {
+		"BACKEND": 'storages.backends.s3boto3.S3Boto3Storage',
+	},
+	"staticfiles": {
+		"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+	},
+}
 
 # Custom settings.
 #_______________________________________________________________________________________
@@ -180,7 +195,8 @@ SIMPLE_JWT = {
 }
 
 # for user uploaded media.
-MEDIA_URL = "/media/"
+AWS_S3_CUSTOM_DOMAIN = env("S3_CUSTOM_DOMAIN")
+MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/'
 MEDIA_ROOT = BASE_DIR / "media"
 
 
@@ -253,3 +269,11 @@ CACHES = {
 		"BACKEND": "django.core.cache.backends.locmem.LocMemCache",
 	}
 }
+
+#Cloud S3 Storage.
+AWS_ACCESS_KEY_ID = env("S3_Access_key_ID")
+AWS_SECRET_ACCESS_KEY = env("S3_Secret_Access_Key")
+AWS_STORAGE_BUCKET_NAME = env("S3_BUCKET_NAME")
+AWS_S3_ENDPOINT_URL = env("S3_ENDPOINT_URL")
+AWS_S3_REGION_NAME = 'ap-southeast-2' 
+
