@@ -85,7 +85,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
 	{
 		'BACKEND': 'django.template.backends.django.DjangoTemplates',
-		'DIRS': [],
+		'DIRS': [BASE_DIR / 'templates'],
 		'APP_DIRS': True,
 		'OPTIONS': {
 			'context_processors': [
@@ -218,6 +218,7 @@ ACCOUNT_SIGNUP_FIELDS = ['username',"email*", "password1*"]
 
 ACCOUNT_EMAIL_VERIFICATION = 'none' # for email verification
 LOGIN_URL = '/api/v1/auth/login/'
+LOGIN_REDIRECT_URL = '/auth/token/'
 
 SOCIALACCOUNT_PROVIDERS = {
 	'google': {
@@ -277,3 +278,5 @@ AWS_STORAGE_BUCKET_NAME = env("S3_BUCKET_NAME")
 AWS_S3_ENDPOINT_URL = env("S3_ENDPOINT_URL")
 AWS_S3_REGION_NAME = 'ap-southeast-2' 
 
+SUPABASE_URL = env("SUPABASE_URL")
+SUPABASE_SERVICE_KEY = env("SUPABASE_SERVICE_KEY")

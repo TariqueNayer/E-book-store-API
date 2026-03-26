@@ -1,0 +1,11 @@
+{% extends "rest_framework/base.html" %}
+
+{% block userlinks %}
+  {% if user.is_authenticated %}
+    <p>{{ user.username }}</p>
+    <p><a href="/api/auth/logout/">Logout</a></p>
+  {% else %}
+    <p> </p>
+    <p><a href='/accounts/google/login/'>Login with Google</a></p>
+  {% endif %}
+{% endblock %}

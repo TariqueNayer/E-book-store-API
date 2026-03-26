@@ -3,7 +3,9 @@ import json
 import hmac
 import hashlib
 import base64
+import requests
 
+from django.shortcuts import redirect
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
@@ -21,6 +23,8 @@ from drf_spectacular.utils import extend_schema, OpenApiTypes, OpenApiParameter
 from square import Square
 from square.environment import SquareEnvironment
 from square.types.currency import Currency
+
+from supabase import create_client
 
 from .models import Book, Order, Order_Status
 from .serializers import AdminBookSerializer, PublicBookSerializer, AdminOrderSerializer, PublicOrderSerializer
@@ -140,7 +144,7 @@ class SquareWebhookView(APIView):
     authentication_classes = []
     permission_classes = []
 
-    async def post(self, request):
+    def post(self, request):
         if not verify_square_signature(request):
             return Response({"error": "Invalid signature"}, status=403)
 
@@ -181,6 +185,8 @@ class SquareWebhookView(APIView):
 
         return Response({"status": "ok"})
 
+supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY)
+
 @extend_schema(
     responses={200: OpenApiTypes.BINARY}
 )
@@ -196,6 +202,6 @@ class DownloadBookView(APIView):
         if order.status != Order_Status.PAID:
             raise PermissionDenied("Payment_required")
 
-        file_path = order.book.pdf_file.path
-
-        return FileResponse(open(file_path, "rb"), content_type="application/pdf")
+        file_name = order.book.pdf_file.name  # just the file path within the bucket
+        signed = supabase.storage.from_("Books").create_signed_url(file_name, expires_in=60)
+        return redirect(signed["signedURL"])
