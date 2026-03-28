@@ -5,13 +5,13 @@ class AdminBookSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Book 
-        fields = ['id', 'title', 'pdf_file','author', 'description', 'price']
+        fields = ['id', 'title','cover', 'pdf_file','author', 'description', 'price']
 
 class PublicBookSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Book 
-        fields = ['id', 'title', 'author', 'description', 'price']
+        fields = ['id', 'title','cover', 'author', 'description', 'price']
 
 class AdminOrderSerializer(serializers.ModelSerializer):
     # This automatically add the tag if the book is gone ma boy

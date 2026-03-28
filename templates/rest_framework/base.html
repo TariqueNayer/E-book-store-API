@@ -2,8 +2,8 @@
 
 {% block userlinks %}
   {% if user.is_authenticated %}
-    <p>{{ user.username }}</p>
-    <p><a href="/api/auth/logout/">Logout</a></p>
+    <b>{{ user.username }}</b>
+    <form action="/api/auth/logout/" method="post">{% csrf_token %}<button type="submit" style='color: darkred;'>Logout</button></form>
   {% else %}
     <p> </p>
     <p><a href='/accounts/google/login/'>Login with Google</a></p>

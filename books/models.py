@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth import get_user_model
 import uuid
 
+from .storage_backends import PublicMediaStorage
+
 # Create your models here.
 class Book(models.Model):
 	id = models.UUIDField(
@@ -10,6 +12,8 @@ class Book(models.Model):
 		editable=False,
 	)
 	title = models.CharField(max_length=200)
+
+	cover = models.ImageField(upload_to='books/cover/', blank=True, storage=PublicMediaStorage())
 
 	author = models.CharField(max_length=500)
 
