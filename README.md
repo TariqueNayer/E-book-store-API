@@ -25,8 +25,9 @@ go to the link in your browser. and finish the sandbox payment prompts by clicki
 ### Authentication: 
 - I used JWT authentication via the third party package "djangorestframework_simplejwt"
 - I have implemented __Social Authentication__ with __Google Oauth2__. 
-- I used Django rest framework's session authentication for the Google Oauth handshake to login users.<br>
-in the browsable API pages, there is an option for users to Login or Signup using their Google account.
+- I used Django rest framework's session authentication for the __Google Oauth Handshake__ to login users.<br>
+in the browsable API pages on top left corner, I made an option for browsable users to Login or Signup using their Google account.
+- in order to keep the session authentication limited to the handshake. I used httpOnly cookies and enabled CSRF protection. so the JWT tokens can be stored in cookies.
 
 ## Tools.
 #### API:
