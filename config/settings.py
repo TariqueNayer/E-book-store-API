@@ -184,6 +184,7 @@ REST_AUTH = {
 	'JWT_AUTH_REFRESH_COOKIE': 'bookapi-refresh-token',
 	'JWT_AUTH_HTTPONLY': not DEBUG,
 	'JWT_AUTH_SECURE': not DEBUG,
+	"JWT_AUTH_COOKIE_USE_CSRF": not DEBUG,
 }
 
 # simple jwt.
@@ -218,7 +219,7 @@ ACCOUNT_SIGNUP_FIELDS = ['username',"email*", "password1*"]
 
 ACCOUNT_EMAIL_VERIFICATION = 'none' # for email verification
 LOGIN_URL = '/api/v1/auth/login/'
-LOGIN_REDIRECT_URL = '/auth/token/'
+LOGIN_REDIRECT_URL = '/api/v1/'
 
 SOCIALACCOUNT_PROVIDERS = {
 	'google': {
@@ -235,6 +236,8 @@ SOCIALACCOUNT_PROVIDERS = {
 SOCIALACCOUNT_AUTO_SIGNUP = True
 ACCOUNT_UNIQUE_EMAIL = True
 SOCIALACCOUNT_EMAIL_VERIFICATION = "none"
+SOCIALACCOUNT_EMAIL_AUTHENTICATION = True
+SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
 
 SOCIALACCOUNT_ADAPTER = "accounts.adapters.CustomSocialAccountAdapter"
 

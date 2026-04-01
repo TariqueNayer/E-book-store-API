@@ -8,17 +8,17 @@ from django.shortcuts import render, redirect
 
 class GoogleLogin(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter
-    
 
-
-def show_token(request):
-    if not request.user.is_authenticated:
-        return redirect('/accounts/google/login/')
+    def get_response(self):
+        response = super().get_response()
+        access_token = response.data.get("access")
+        if access_token:
+            response.set_cookie(
+                key="bookapi-auth",
+                value=access_token,
+                httponly=True,
+                secure=True,
+                samesite="Lax",
+            )
+        return response
     
-    refresh = RefreshToken.for_user(request.user)
-    access_token = str(refresh.access_token)
-    
-    return render(request, 'token_display.html', {
-        'access_token': access_token,
-        'user': request.user
-    })

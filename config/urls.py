@@ -16,14 +16,13 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from accounts.views import GoogleLogin, show_token
+from accounts.views import GoogleLogin
 
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('allauth.urls')),
-    path('auth/token/', show_token, name='show_token'),
 
 
     path('api/auth/', include('dj_rest_auth.urls')),
