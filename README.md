@@ -56,3 +56,5 @@ go to the link in your browser. and finish the sandbox payment prompts by clicki
 - [Supabase S3 compatible Storage](https://supabase.com/docs/guides/storage)
 ### Payment Gateway:
 - [Square Payment Gateway service](https://developer.squareup.com/docs/devtools/sandbox/overview)
+### Deployment
+- [Render](https://render.com)
