@@ -14,6 +14,7 @@ Schema:
 - Sandbox payments via Square — full purchase flow without real money
 - PDF delivery via signed, time-limited Supabase URLs
 - Dual-bucket Supabase storage — private for PDFs, public for cover images
+- Neon Serverless Postgres — for database
 - Auto-generated API schema with Swagger and Redoc
 
 
@@ -54,6 +55,8 @@ go to the link in your browser. and finish the sandbox payment prompts by clicki
 - DRF_Spectacular (swagger and redoc)
 ### Storage:
 - [Supabase S3 compatible Storage](https://supabase.com/docs/guides/storage)
+### Database:
+- [Neon Postgres](https://neon.com/)
 ### Payment Gateway:
 - [Square Payment Gateway service](https://developer.squareup.com/docs/devtools/sandbox/overview)
 ### Deployment
