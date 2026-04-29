@@ -178,7 +178,7 @@ class SquareWebhookView(APIView):
                     order.square_payment_id = payment.get("id")
                     order.save()
 
-                    print(f"Order {order.id} marked as PAID")
+                    
 
                 except Order.DoesNotExist:
                     print("Order not found for square order:", square_order_id)
@@ -196,7 +196,7 @@ class DownloadBookView(APIView):
     def get(self, request, order_id):
         try:
             order = Order.objects.get(id=order_id, user=request.user)
-        except order.DoesNotExist:
+        except Order.DoesNotExist:
             raise NotFound("Order not found")
 
         if order.status != Order_Status.PAID:
@@ -205,3 +205,4 @@ class DownloadBookView(APIView):
         file_name = order.book.pdf_file.name  # just the file path within the bucket
         signed = supabase.storage.from_("Books").create_signed_url(file_name, expires_in=60)
         return redirect(signed["signedURL"])
+

@@ -1,5 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
+from django.urls import reverse
+
 from .models import Book, Order, Order_Status
 
 from rest_framework.test import APIClient
@@ -7,6 +9,7 @@ from rest_framework import status
 
 from unittest.mock import patch, MagicMock
 import hmac, hashlib, base64
+import json
 
 # Helper tools __________________________________________________________
 User_model = get_user_model()
@@ -89,4 +92,139 @@ class UserOrderViewSetTests(TestCase):
 		self.assertIn("pay_url", response.data)
 		self.assertIn(str(response.data["id"]), response.data["pay_url"])
 
-	
+# Payment tests_________________________________________________
+
+class PayActionTests(TestCase):
+	def setUp(self):
+		self.client = APIClient()
+		self.user = make_user("buyer")
+		self.book = make_book("test_book", "9.99")
+
+	@patch("books.views.Square")  # adjust import path
+	def test_pay_already_paid_order_returns_400(self, mock_square):
+		order = make_order(self.user, self.book, status=Order_Status.PAID)
+		self.client.force_authenticate(self.user)
+		response = self.client.post(f"/api/v1/orders/{order.id}/pay/")
+		self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+		self.assertIn("already processed", response.data["error"])
+		# Square was never called
+		mock_square.assert_not_called()
+
+	@patch("books.views.Square")
+	def test_pay_pending_order_calls_square_and_returns_url(self, MockSquare):
+		order = make_order(self.user, self.book, status=Order_Status.PENDING)
+
+		mock_link = MagicMock()
+		mock_link.url = "https://square.link/fake"
+		mock_link.order_id = "sq_order_123"
+		MockSquare.return_value.checkout.payment_links.create.return_value = MagicMock(
+			payment_link=mock_link, errors=None
+		)
+
+		self.client.force_authenticate(self.user)
+		response = self.client.post(f"/api/v1/orders/{order.id}/pay/")
+
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		self.assertIn("payment_url", response.data)
+
+		order.refresh_from_db()
+		self.assertEqual(order.square_order_id, "sq_order_123")
+
+# WebhookView tests_____________________________________________________
+
+def make_square_signature(url, body_bytes, key):
+	"""Replicating verify_square_signature logic."""
+	message = url.encode("utf-8") + body_bytes
+	digest = hmac.new(key.encode("utf-8"), message, hashlib.sha256).digest()
+	return base64.b64encode(digest).decode("utf-8")
+
+class SquareWebhookViewTests(TestCase):
+	def setUp(self):
+		self.client = APIClient()
+		self.user = make_user("buyer")
+		self.book = make_book("cool_book", "99.99")
+		self.order = make_order(self.user, self.book, status=Order_Status.PENDING)
+		self.order.square_order_id = "sq_order_test_123"
+		self.order.save()
+
+	def test_invalid_signature_returns_403(self):
+		path = reverse('webhook_view')
+		response = self.client.post(
+			path,
+			data={"type": "payment.updated"},
+			format="json",
+			HTTP_X_SQUARE_HMACSHA256_SIGNATURE="bad_signature",
+		)
+		self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+	def test_missing_signature_returns_403(self):
+		path = reverse('webhook_view')
+		response = self.client.post(path, data={}, format="json")
+		self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+	@patch("django.conf.settings.SQUARE_WEBHOOK_SIGNATURE_KEY", "test_key")
+	def test_valid_payment_marks_order_paid(self):
+		path = reverse('webhook_view')  # e.g., "/api/v1/order/webhook/"
+		url = f"http://testserver{path}"
+		payload = {
+			"type": "payment.updated",
+			"data": {
+				"object": {
+					"payment": {
+						"status": "COMPLETED",
+						"id": "sq_payment_abc",
+						"order_id": self.order.square_order_id,
+						"metadata": {},
+					}
+				}
+			},
+		}
+		body = json.dumps(payload).encode("utf-8")
+		sig = make_square_signature(url, body, "test_key")
+
+		response = self.client.post(
+			path,
+			data=body,
+			content_type="application/json",
+			HTTP_X_SQUARE_HMACSHA256_SIGNATURE=sig,
+		)
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		self.order.refresh_from_db()
+		self.assertEqual(self.order.status, Order_Status.PAID)
+
+# DownloadView Tests______________________________________________________________________________
+
+class DownloadBookViewTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = make_user("reader")
+        self.other_user = make_user("intruder")
+        self.book = make_book("lovely book", "30.00")
+
+    @patch("books.views.supabase")
+    def test_paid_order_redirects_to_signed_url(self, mock_supa):
+        mock_supa.storage.from_.return_value.create_signed_url.return_value = {
+            "signedURL": "https://supabase.example.com/signed-url"
+        }
+        order = make_order(user=self.user, book=self.book, status=Order_Status.PAID)
+        self.client.force_authenticate(self.user)
+        response = self.client.get(f"/api/v1/orders/{order.id}/download/")
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+
+    def test_unpaid_order_is_denied(self):
+        order = make_order(user=self.user, book=self.book, status=Order_Status.PENDING)
+        self.client.force_authenticate(self.user)
+        response = self.client.get(f"/api/v1/orders/{order.id}/download/")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_other_users_order_is_not_found(self):
+        """User cannot download someone else's order — should 404, not 403."""
+        order = make_order(user=self.other_user, book=self.book, status=Order_Status.PAID)
+        self.client.force_authenticate(self.user)
+        response = self.client.get(f"/api/v1/orders/{order.id}/download/")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_unauthenticated_download_denied(self):
+        order = make_order(user=self.user, book=self.book, status=Order_Status.PAID)
+        response = self.client.get(f"/api/v1/orders/{order.id}/download/")
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
