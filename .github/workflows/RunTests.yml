@@ -29,6 +29,7 @@ jobs:
         SECRET_KEY: '0+unh(kl4@na%(y!4lk-12j6@&s@7a+q#1-9nfzlk0hd34t!fb'
         DEBUG: 'True'
         DATABASE_URL: 'sqlite:///:memory:'
+        S3_CUSTOM_DOMAIN: 'dummystring.com'
       run: |
         python manage.py collectstatic --noinput
         python manage.py test
