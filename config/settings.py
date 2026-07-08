@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/6.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
-
+import sys
 from pathlib import Path
 from environs import Env
 from datetime import timedelta
@@ -21,6 +21,7 @@ env.read_env()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+TESTING = 'test' in sys.argv
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
@@ -257,22 +258,23 @@ if not DEBUG:
 	CSRF_COOKIE_HTTPONLY = False  # must be False for DRF browsable API
 	SESSION_COOKIE_SAMESITE = "None"
 	CSRF_COOKIE_SAMESITE = "None"
+	
+if not TESTING:
+	#HTTPS
+	SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=True)
 
-#HTTPS
-SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=True)
+	SECURE_HSTS_SECONDS = env.int("SECURE_HSTS_SECONDS", default=2592000)  # 30 days
+	SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool(
+		"SECURE_HSTS_INCLUDE_SUBDOMAINS", default=True
+	)
+	SECURE_HSTS_PRELOAD = env.bool("SECURE_HSTS_PRELOAD", default=True)
 
-SECURE_HSTS_SECONDS = env.int("SECURE_HSTS_SECONDS", default=2592000)  # 30 days
-SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool(
-	"SECURE_HSTS_INCLUDE_SUBDOMAINS", default=True
-)
-SECURE_HSTS_PRELOAD = env.bool("SECURE_HSTS_PRELOAD", default=True)
-
-#cache
-CACHES = {
-	"default": {
-		"BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+	#cache
+	CACHES = {
+		"default": {
+			"BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+		}
 	}
-}
 
 #Cloud S3 Storage.
 AWS_ACCESS_KEY_ID = env("S3_Access_key_ID")
