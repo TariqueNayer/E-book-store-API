@@ -25,11 +25,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     - name: Run Tests
-      env:
-        SECRET_KEY: '0+unh(kl4@na%(y!4lk-12j6@&s@7a+q#1-9nfzlk0hd34t!fb'
-        DEBUG: 'True'
-        DATABASE_URL: 'sqlite:///:memory:'
-        S3_CUSTOM_DOMAIN: 'dummystring.com'
       run: |
+        cp .env.test .env
         python manage.py collectstatic --noinput
         python manage.py test
