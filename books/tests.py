@@ -201,7 +201,7 @@ class DownloadBookViewTests(TestCase):
         self.other_user = make_user("intruder")
         self.book = make_book("lovely book", "30.00")
 
-    @patch("books.views.supabase")
+    @patch("books.views._supabase")
     def test_paid_order_redirects_to_signed_url(self, mock_supa):
         mock_supa.storage.from_.return_value.create_signed_url.return_value = {
             "signedURL": "https://supabase.example.com/signed-url"

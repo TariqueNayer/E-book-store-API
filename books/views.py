@@ -185,7 +185,14 @@ class SquareWebhookView(APIView):
 
         return Response({"status": "ok"})
 
-supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY)
+
+_supabase = None
+
+def get_supabase():
+    global _supabase
+    if _supabase is None:
+        _supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY)
+    return _supabase
 
 @extend_schema(
     responses={200: OpenApiTypes.BINARY}
@@ -194,6 +201,7 @@ class DownloadBookView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, order_id):
+        get_supabase()
         try:
             order = Order.objects.get(id=order_id, user=request.user)
         except Order.DoesNotExist:
@@ -203,6 +211,6 @@ class DownloadBookView(APIView):
             raise PermissionDenied("Payment_required")
 
         file_name = order.book.pdf_file.name  # just the file path within the bucket
-        signed = supabase.storage.from_("Books").create_signed_url(file_name, expires_in=60)
+        signed = _supabase.storage.from_("Books").create_signed_url(file_name, expires_in=60)
         return redirect(signed["signedURL"])
 
