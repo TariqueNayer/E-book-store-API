@@ -4,8 +4,13 @@ from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from dj_rest_auth.registration.views import SocialLoginView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.shortcuts import render, redirect
+from drf_spectacular.utils import extend_schema
 
-
+@extend_schema(
+    summary="Sign in with Google",
+    description="Handles Google OAuth2 login and sets a JWT access token as an httpOnly cookie.",
+    tags=["Auth"],
+)
 class GoogleLogin(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter
 

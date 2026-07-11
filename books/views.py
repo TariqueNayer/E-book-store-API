@@ -18,7 +18,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied, NotFound
 
-from drf_spectacular.utils import extend_schema, OpenApiTypes, OpenApiParameter
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiTypes, OpenApiParameter
 
 from square import Square
 from square.environment import SquareEnvironment
@@ -32,12 +32,20 @@ from .serializers import AdminBookSerializer, PublicBookSerializer, AdminOrderSe
 # Create your views here.
 
 # Book.
-
+@extend_schema_view(
+    list=extend_schema(summary="List all books", tags=["Books"]),
+    retrieve=extend_schema(summary="Retrieve a single book", tags=["Books"]),
+)
 class PublicBookViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Book.objects.all()
     serializer_class = PublicBookSerializer
     
-
+@extend_schema_view(
+    list=extend_schema(summary="List all books (admin)", tags=["Admin"]),
+    create=extend_schema(summary="Create a new book", tags=["Admin"]),
+    update=extend_schema(summary="Update a book", tags=["Admin"]),
+    destroy=extend_schema(summary="Delete a book", tags=["Admin"]),
+)
 class AdminBookViewSet(viewsets.ModelViewSet):
     queryset = Book.objects.all()
     serializer_class = AdminBookSerializer
@@ -47,12 +55,23 @@ class AdminBookViewSet(viewsets.ModelViewSet):
 # Order.
 
 # renders admin/orders/
+@extend_schema_view(
+    list=extend_schema(summary="List all Orders from all users (admin)", tags=["Admin"]), 
+)
 class AdminOrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = AdminOrderSerializer
     permission_classes = [permissions.IsAdminUser]
 
 # orders/
+@extend_schema_view(
+    list=extend_schema(summary="List your orders", tags=["Orders"]),
+    create=extend_schema(
+        summary="Create an order",
+        description="Creates a pending order for a book. Returns a pay_url to complete checkout.",
+        tags=["Orders"],
+    ),
+)
 class UserOrderViewSet(viewsets.ModelViewSet):
     serializer_class = PublicOrderSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -81,9 +100,12 @@ class UserOrderViewSet(viewsets.ModelViewSet):
         return response
 
     @extend_schema(
-    parameters=[
-        OpenApiParameter(name="id", type=str, location=OpenApiParameter.PATH)
-    ]
+        summary="Pay for an order",
+        description="Generates a Square sandbox payment link for a pending order.",
+        tags=["Orders"],
+        parameters=[
+            OpenApiParameter(name="id", type=str, location=OpenApiParameter.PATH)
+        ]
     )
     @action(detail=True, methods=["post"])
     def pay(self, request, pk=None):
@@ -195,6 +217,9 @@ def get_supabase():
     return _supabase
 
 @extend_schema(
+    summary="Download purchased book",
+    description="Returns a signed, time-limited Supabase URL to download the PDF for a paid order.",
+    tags=["Books"],
     responses={200: OpenApiTypes.BINARY}
 )
 class DownloadBookView(APIView):

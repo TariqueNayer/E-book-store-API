@@ -287,3 +287,9 @@ AWS_S3_REGION_NAME = 'ap-southeast-2'
 SUPABASE_URL = env("SUPABASE_URL")
 SUPABASE_SERVICE_KEY = env("SUPABASE_SERVICE_KEY")
 SUPABASE_PUBLIC_BUCKET = env("SUPABASE_PUBLIC_BUCKET")
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'E-Book Store API',
+    'DESCRIPTION': 'An eCommerce backend for digital books — browse, purchase via Square sandbox payments, and download PDFs via signed Supabase URLs.',
+    'VERSION': '1.0.0',
+}
