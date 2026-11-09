@@ -293,3 +293,5 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'An eCommerce backend for digital books — browse, purchase via Square sandbox payments, and download PDFs via signed Supabase URLs.',
     'VERSION': '1.0.0',
 }
+
+CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
